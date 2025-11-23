@@ -1,0 +1,34 @@
+# Web 框架
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+pydantic==2.5.0
+pydantic-settings==2.1.0
+
+# LangChain 相关
+langchain==0.0.340
+openai==1.3.5
+chromadb==0.4.18
+faiss-cpu==1.7.4
+
+# 数据处理
+pandas==2.1.3
+numpy==1.26.2
+
+# OCR 相关（选择其一）
+# pytesseract==0.3.10
+# paddleocr==2.7.0
+# easyocr==1.7.0
+
+# 缓存
+redis==5.0.1
+
+# 工具库
+python-dotenv==1.0.0
+requests==2.31.0
+
+# 测试
+pytest==7.4.3
+pytest-asyncio==0.21.1
+
+# 日志
+loguru==0.7.2
