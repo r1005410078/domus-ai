@@ -103,3 +103,5 @@ temp/
 # Documentation builds
 docs/_build/
 site/
+.qdrant/data
+.qdrant/snapshots
