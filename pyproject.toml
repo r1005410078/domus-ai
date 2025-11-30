@@ -6,18 +6,39 @@ authors = [
     {name = "rongtaosheng",email = "rongtaosheng@econ-tech.cn"}
 ]
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.13,<4.0.0"
 dependencies = [
-    "httpx (>=0.28.1,<0.29.0)",
+    "httpx[socks] (>=0.28.1,<0.29.0)",
     "pydantic (>=2.12.4,<3.0.0)",
     "anthropic (>=0.75.0,<0.76.0)",
     "pytest (>=9.0.1,<10.0.0)",
     "openai (>=2.8.1,<3.0.0)",
-    "pydantic-settings (>=2.12.0,<3.0.0)"
-    
+    "pydantic-settings (>=2.12.0,<3.0.0)",
+    "qdrant-client (>=1.16.1,<2.0.0)",
+    "langchain (>=1.1.0,<2.0.0)",
+    "fastapi[standard] (>=0.122.0,<0.123.0)",
+    "langchain-openai (>=1.1.0,<2.0.0)",
+    "langchain-text-splitters (>=1.0.0,<2.0.0)"
 ]
 
+
+[tool.poetry]
+package-mode = true
+# packages 必须是 **数组**
+packages = [
+    { include = "app" }
+]
+
+[project.scripts]
+domus-ai = "app.main:main"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[dependency-groups]
+dev = [
+    "pytest-asyncio (>=1.3.0,<2.0.0)"
+]
+
+

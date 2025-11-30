@@ -11,13 +11,14 @@ Preprocessing Node for HouseModel data.
 - pydantic
 - openai / or your embedding client
 """
-
+import asyncio
+from langchain_core.runnables import Runnable
 from typing import List, Optional
 from pydantic import BaseModel
 import openai
-
+from langchain_core.runnables import RunnableConfig
 from core.models.house_info import HouseModel
-
+from qdrant_client.http.models import PointStruct, models
 
 # ==========================
 # 输出结构（清洗后的数据）
@@ -51,50 +52,38 @@ class HouseCleaned(BaseModel):
 #             "embedding": [...],
 #             "metadata": {...}
 #         }
-class VectorRecord(BaseModel):
-    id: str
-    embedding: List[float]
-    metadata: dict
 
 # ==========================
 # Preprocessing Node 主逻辑
 # ==========================
 
-class PreprocessingNode:
-
+class PreprocessingNode(Runnable):
+    # 必须实现的属性
+    @property
+    def InputType(self):
+        return HouseModel
+    
+    @property
+    def OutputType(self):
+        return PointStruct
+    
     def __init__(self, embedding_model: str = "text-embedding-3-large"):
         self.embedding_model = embedding_model
 
-    # ---- 主入口 ----
-    def process(self, house: HouseModel) -> VectorRecord:
-        """
-        输入 HouseModel
-        输出：
-        {
-            "id": str,
-            "embedding": [...],
-            "metadata": {...}
-        }
-        """
-        cleaned = self.clean(house)
-        embedding = self.embed(cleaned.embedding_text)
-
-        return VectorRecord(
-            id=cleaned.id,
-            embedding=embedding,
-            metadata=cleaned.model_dump(exclude={"embedding_text"})
-        )
-
+ 
     # ==========================
     # Step 1: 清洗 & 结构化提取
     # ==========================
     def clean(self, house: HouseModel) -> HouseCleaned:
 
         # --- 户型 ---
+
+
         apt = house.apartment_type
-        rooms = apt.room if apt else None
-        halls = apt.hall if apt else None
-        bathrooms = apt.bathroom if apt else None
+
+        rooms = apt and apt.room if apt else None
+        halls = apt and apt.hall if apt else None
+        bathrooms = apt and apt.bathroom if apt else None
 
         # --- 面积 ---
         area = house.building_area
@@ -160,11 +149,13 @@ class PreprocessingNode:
     # ==========================
     # Step 2: embedding
     # ==========================
-    def embed(self, text: str) -> List[float]:
+    def embed(self, text: str, config: RunnableConfig) -> List[float]:
         """
         调用 embedding API
         """
-        client = openai.OpenAI()
+        client = config.get("configurable", {}).get("openai")
+        assert client is not None, "client 不存在"
+        assert isinstance(client, openai.OpenAI), "client 不是 OpenAI 类型"
 
         resp = client.embeddings.create(
             model=self.embedding_model,
@@ -172,21 +163,30 @@ class PreprocessingNode:
         )
 
         return resp.data[0].embedding
+    
+       # ---- 主入口 ----
+    async def ainvoke(self, input: HouseModel, config: RunnableConfig) -> PointStruct:
+        """
+        输入 HouseModel
+        输出：
+        {
+            "id": str,
+            "embedding": [...],
+            "metadata": {...}
+        }
+        
+        """
 
+        print("开始清洗", input.title)
+        cleaned = self.clean(input)
+        embedding = self.embed(cleaned.embedding_text, config)
 
-# ==========================
-# 批处理函数（可选）
-# ==========================
+        return PointStruct(
+            id=cleaned.id,
+            vector=embedding,
+            payload=cleaned.model_dump(exclude={"embedding_text"})
+        )
 
-def preprocess_houses(houses: List[HouseModel], embedding_model: str = "text-embedding-3-large") -> List[VectorRecord]:
-    """
-    批量清洗 & embedding
-    返回用于向量数据库写入的 list
-    """
-    node = PreprocessingNode(embedding_model)
+    def invoke(self, input: HouseModel, config: RunnableConfig) -> PointStruct:
+        return asyncio.run(self.ainvoke(input, config))
 
-    results = []
-    for h in houses:
-        results.append(node.process(h))
-
-    return results
