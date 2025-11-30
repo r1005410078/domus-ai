@@ -37,6 +37,6 @@ response = client.chat.completions.create(
 
 # Parse the result
 result_text = response.choices[0].message.content
-result_dict = json.loads(result_text)
-person = Person(**result_dict)
-print(person)  # Person(name='张三', age=28)
+# result_dict = json.loads(result_text)
+# person = Person(**result_dict)
+# print(person)  # Person(name='张三', age=28)
