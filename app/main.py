@@ -12,13 +12,10 @@ from pydantic import BaseModel
 from di.parser_house_info_service import get_parser_house_info_service
 from service.parser_house_info import ParserHouseInfoService
 
-
-
 class Query(BaseModel):
     input: str
 
 app = FastAPI()
-
 
 openai_client = OpenAI(base_url='https://api.openai-proxy.org/v1')
 qdrant = AsyncQdrantClient(url="http://localhost:6333")
@@ -31,7 +28,7 @@ config = RunnableConfig({
 })
 
 @app.post("/query_house")
-async def root(query: Query):
+async def query_house_api(query: Query):
     res = await query_house(input=query.input, config=config)
     return { "data": res, "status": "ok", "code": 200 }
 
@@ -42,7 +39,10 @@ async def ocr(image_path: str):
 
 # 解析房源信息文本输出结构体
 @app.post("/parse_text_to_house_info")
-async def parse(text: str, service: Annotated[ParserHouseInfoService, Depends(get_parser_house_info_service)]):
-   
+async def parse_api(text: str, service: Annotated[ParserHouseInfoService, Depends(get_parser_house_info_service)]):
    res = await service.parse_house_info(text)
    return res
+
+@app.get("/")
+async def root():
+    return {"message": "这是一个AI房源智能助手服务"}
