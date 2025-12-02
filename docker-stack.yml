@@ -1,0 +1,23 @@
+version: "3.9"
+
+services:
+  domus-api:
+    image: registry.cn-hangzhou.aliyuncs.com/tongts/domus-ai-service
+    networks:
+      - shared
+    container_name: domus-api
+    environment:
+      QDRANT_DATABASE_URL: "http://127.0.0.1:6333"
+      #OPENAI_API_KEY:
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      update_config:
+        parallelism: 1
+        delay: 5s
+
+networks:
+  shared:
+    external: true
+    name: meida_network

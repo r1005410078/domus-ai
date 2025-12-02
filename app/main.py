@@ -1,5 +1,6 @@
 
 
+import os
 from typing import Annotated
 from fastapi import APIRouter, Depends, FastAPI
 from openai import OpenAI
@@ -12,13 +13,15 @@ from pydantic import BaseModel
 from di.parser_house_info_service import get_parser_house_info_service
 from service.parser_house_info import ParserHouseInfoService
 
+QDRANT_DATABASE_URL = os.getenv("QDRANT_DATABASE_URL")
+
 class Query(BaseModel):
     input: str
 
 app = FastAPI()
 
 openai_client = OpenAI(base_url='https://api.openai-proxy.org/v1')
-qdrant = AsyncQdrantClient(url="http://localhost:6333")
+qdrant = AsyncQdrantClient(url=QDRANT_DATABASE_URL)
 
 config = RunnableConfig({
     "configurable": {
