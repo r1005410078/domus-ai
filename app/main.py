@@ -1,5 +1,6 @@
 
 
+from contextlib import asynccontextmanager
 import os
 from typing import Annotated
 from fastapi import APIRouter, Depends, FastAPI
@@ -7,21 +8,46 @@ from openai import OpenAI
 from qdrant_client import AsyncQdrantClient
 from langchain_core.runnables import RunnableConfig
 
-from core.chains.search_chain import query_house
+from config.logging_config import setup_logging
+from core.chains.search_chain import query_house, start_workflows
 from pydantic import BaseModel
 
 from di.parser_house_info_service import get_parser_house_info_service
 from service.parser_house_info import ParserHouseInfoService
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from service.pull_house_info import PullHouseInfoService
 
 QDRANT_DATABASE_URL = os.getenv("QDRANT_DATABASE_URL")
+openai_client = OpenAI(base_url='https://api.openai-proxy.org/v1')
+qdrant = AsyncQdrantClient(url=QDRANT_DATABASE_URL)
+
+house_api = PullHouseInfoService()
 
 class Query(BaseModel):
     input: str
+    
 
-app = FastAPI()
+async def job():
+    config = RunnableConfig({
+      "configurable": {
+        "openai": openai_client,
+        "qdrant": qdrant
+      },
+      "max_concurrency": 2
+    })
+    await start_workflows(api=house_api, config=config)
 
-openai_client = OpenAI(base_url='https://api.openai-proxy.org/v1')
-qdrant = AsyncQdrantClient(url=QDRANT_DATABASE_URL)
+scheduler =  AsyncIOScheduler()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    scheduler.start()
+    yield
+    scheduler.shutdown()
+    print("应用关闭")
+
+app = FastAPI(lifespan=lifespan)
+scheduler.add_job(job, "interval", seconds=5)
 
 config = RunnableConfig({
     "configurable": {
@@ -49,3 +75,4 @@ async def parse_api(text: str, service: Annotated[ParserHouseInfoService, Depend
 @app.get("/")
 async def root():
     return {"message": "这是一个AI房源智能助手服务"}
+

@@ -3,19 +3,19 @@
 import asyncio
 from langchain_core.runnables import RunnableLambda,  RunnableConfig
 from openai import OpenAI
-
 from core.interfaces.house_info import HouseInfoInterface
 from core.nodes.filter_node import house_filter_node
 from core.nodes.embedding_node import embedding_node
 from core.nodes.preprocessing_node import PreprocessingNode
 from core.nodes.vectorstore_node import *
 from core.nodes.ingestion_node import Ingestion
+from config.logging_config import logger
 
 # 异步数据拉取任务
 async def data_pull_workflow(api: HouseInfoInterface, config: RunnableConfig):
     while True:
         try:
-            print("异步拉取房源数据中...")
+            logger.info("异步拉取房源数据中...")
             # 1. 拉取数据
             list = await Ingestion(api).ainvoke(None, config)
             # 2. 清洗数据,
@@ -47,7 +47,7 @@ async def query_house(input: str, config: RunnableConfig):
 
 # 启动异步工作流
 async def start_workflows(api: HouseInfoInterface, config: RunnableConfig):
-    print("启动异步工作流")
+    logger.info("启动异步工作流")
     await asyncio.gather(
         data_pull_workflow(api=api, config=config),
     )

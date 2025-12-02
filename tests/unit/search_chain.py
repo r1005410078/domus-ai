@@ -43,19 +43,19 @@ class TestSearchChainNode:
         mock_api.fetch_house_data.return_value = response
         return mock_api
 
-  # async def test_fetch_house_data(self, house_api_mock):
-  #   openai_client = OpenAI(base_url='https://api.openai-proxy.org/v1')
-  #   qdrant = AsyncQdrantClient(url="http://localhost:6333")
+  async def test_fetch_house_data(self, house_api_mock):
+    openai_client = OpenAI(base_url='https://api.openai-proxy.org/v1')
+    qdrant = AsyncQdrantClient(url="http://localhost:6333")
     
-  #   print("开始测试数据拉取")
-  #   config = RunnableConfig({
-  #     "configurable": {
-  #       "openai": openai_client,
-  #       "qdrant": qdrant
-  #     },
-  #     "max_concurrency": 2
-  #   })
-  #   awork = await start_workflows(api=house_api_mock, config=config)
+    print("开始测试数据拉取")
+    config = RunnableConfig({
+      "configurable": {
+        "openai": openai_client,
+        "qdrant": qdrant
+      },
+      "max_concurrency": 2
+    })
+    await start_workflows(api=house_api_mock, config=config)
 
   async def test_query_house(self, house_api_mock):
     openai_client = OpenAI(base_url='https://api.openai-proxy.org/v1')
